@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tawi-Tawi LGU Population Dashboard | Expert Edition</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--ink:#14213d;--mut:#5b6678;--line:#dde3ec;--pri:#0b5cab;--pri2:#e6f0fb;--acc:#e07a00;--ok:#1b7f4b;--bad:#c0392b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1420;--card:#172033;--ink:#e8edf6;--mut:#9aa7bd;--line:#2a3750;--pri:#5aa6ee;--pri2:#1b2d47;--acc:#ffb04d;--ok:#4cc58a;--bad:#ff7b6b}}
+:root[data-theme="dark"]{--bg:#0e1420;--card:#172033;--ink:#e8edf6;--mut:#9aa7bd;--line:#2a3750;--pri:#5aa6ee;--pri2:#1b2d47;--acc:#ffb04d;--ok:#4cc58a;--bad:#ff7b6b}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1200px;margin:0 auto;padding:16px}
+header{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+h1{font-size:1.45rem;margin:0}h2{font-size:1.05rem;margin:0 0 8px}
+.sub{color:var(--mut);margin:2px 0 0;font-size:.9rem}
+.tabs{display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tab{background:none;border:0;border-bottom:3px solid transparent;color:var(--mut);padding:10px 14px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--pri);border-color:var(--pri)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.guide{background:var(--pri2);border-color:transparent;margin-bottom:14px}
+.guide summary{cursor:pointer;font-weight:700}.guide ol{margin:8px 0 0;padding-left:20px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.kpi .l{font-size:.78rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.kpi .v{font-size:1.5rem;font-weight:800;line-height:1.2}.kpi .n{font-size:.82rem;color:var(--mut)}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px}
+.filters label,.fl{font-size:.82rem;color:var(--mut);display:flex;flex-direction:column;gap:3px}
+input,select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);min-height:40px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer;min-height:36px}
+.chip[aria-pressed="true"]{background:var(--pri);border-color:var(--pri);color:#fff}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--card);color:var(--ink);padding:9px 14px;font:inherit;font-weight:600;cursor:pointer;min-height:40px}
+.seg button[aria-pressed="true"]{background:var(--pri);color:#fff}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--pri);border-radius:8px;padding:8px 12px;font:inherit;font-weight:600;cursor:pointer;min-height:40px;text-decoration:none;display:inline-block}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
+@media(max-width:800px){.grid2{grid-template-columns:1fr}}
+.row{display:grid;grid-template-columns:110px 1fr 84px;gap:8px;align-items:center;width:100%;background:none;border:0;border-radius:8px;padding:6px;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.row:hover{background:var(--pri2)}.row[aria-pressed="true"]{background:var(--pri2);outline:2px solid var(--pri)}
+.track{height:16px;background:var(--line);border-radius:8px;overflow:hidden;position:relative}
+.fill{height:100%;background:var(--pri);border-radius:8px;transition:width .35s}
+.row[aria-pressed="true"] .fill{background:var(--acc)}
+.dv{position:absolute;top:0;height:100%;background:var(--ok);transition:all .35s}.dv.neg{background:var(--bad)}
+.zero{position:absolute;top:0;width:2px;height:100%;background:var(--ink);opacity:.5}
+.val{text-align:right;font-variant-numeric:tabular-nums;font-size:.88rem}
+.empty{color:var(--mut);padding:18px;text-align:center}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:8px 0}dt{color:var(--mut);font-size:.88rem}dd{margin:0;font-weight:600;text-align:right}
+.insight{background:var(--pri2);border-radius:8px;padding:10px;font-size:.9rem;margin-top:8px}
+.na{color:var(--mut);font-weight:400}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:480px}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;font-size:.9rem}th{color:var(--mut);font-size:.78rem;text-transform:uppercase}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.cmp{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 10px;align-items:center}
+.cmp .h{font-weight:700;color:var(--mut);font-size:.82rem;text-transform:uppercase}
+.cmp .m{color:var(--mut);font-size:.9rem}.cmp .c{font-weight:700}.win{color:var(--ok)}
+.pos{color:var(--ok)}.neg2{color:var(--bad)}
+.row.s{grid-template-columns:150px 1fr 70px}.row.s:hover{background:none}.row.sc:hover{background:var(--pri2)}
+a{color:var(--pri)}footer{color:var(--mut);font-size:.82rem;margin-top:18px}[hidden]{display:none!important}
+svg text{fill:var(--mut);font-size:11px}
+#map { height: 300px; width: 100%; border-radius: 8px; margin-top: 10px; z-index: 1; }
+.chart-container { position: relative; height: 250px; width: 100%; margin-top: 10px; }
+.loader { border: 4px solid var(--line); border-top: 4px solid var(--pri); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <div>
+  <h1>Tawi-Tawi LGU Population Dashboard <span style="font-size:0.6em; color:var(--acc); vertical-align:middle;">★ Expert Edition</span></h1>
+  <p class="sub">Province of Tawi-Tawi, BARMM &middot; 11 municipalities &middot; Source: Philippine Statistics Authority (Census 2015/2020/2024, FIES poverty, Labor Force Survey)</p>
+ </div>
+ <div style="display:flex; gap:8px;">
+   <button class="btn" onclick="window.print()">🖨️ Print Report</button>
+   <a class="btn" href="https://psa.gov.ph/classification/psgc/citimuni/1907000000" target="_blank" rel="noopener">Verify data at PSA ↗</a>
+ </div>
+</header>
+
+<div id="loadingIndicator" class="card" style="text-align:center; padding:40px;">
+  <div class="loader"></div>
+  <p class="sub">Fetching latest data from PSA OpenSTAT...</p>
+</div>
+
+<div id="dashboardContent" hidden>
+  <details class="card guide" open>
+   <summary>How to use this dashboard (30 seconds)</summary>
+   <ol>
+    <li><b>Overview</b>: switch the census year, then filter by income class or search. Click any map marker or bar to open that municipality's profile.</li>
+    <li><b>Growth</b>: shows who grew or shrank between 2020 and 2024 with interactive charts.</li>
+    <li><b>Other Surveys</b>: adds PSA poverty (FIES and small-area estimates) and Labor Force Survey indicators.</li>
+    <li><b>Compare</b>: sets two municipalities side by side with a radar chart.</li>
+    <li><b>Barangays</b>: lists the 20 largest barangays in the province.</li>
+   </ol>
+  </details>
+
+  <div class="tabs" role="tablist">
+   <button class="tab" role="tab" data-t="ov" aria-selected="true">Overview</button>
+   <button class="tab" role="tab" data-t="gr" aria-selected="false">Growth</button>
+   <button class="tab" role="tab" data-t="sv" aria-selected="false">Other Surveys</button>
+   <button class="tab" role="tab" data-t="cp" aria-selected="false">Compare</button>
+   <button class="tab" role="tab" data-t="bg" aria-selected="false">Barangays</button>
+   <button class="tab" role="tab" data-t="src" aria-selected="false">Sources &amp; Notes</button>
+  </div>
+
+  <!-- OVERVIEW TAB -->
+  <section id="ov">
+   <div class="filters">
+    <div class="fl">Census year<div class="seg" id="yr"><button data-y="p24" aria-pressed="true">2024</button><button data-y="p20" aria-pressed="false">2020</button></div></div>
+    <label>Search municipality<input id="q" type="search" placeholder="e.g. Bongao"></label>
+    <label>Sort by<select id="sort"><option value="pop">Population (high to low)</option><option value="popA">Population (low to high)</option><option value="name">Name (A to Z)</option></select></label>
+    <div class="fl">Income class<div class="chips" id="chips"></div></div>
+    <button class="btn" id="reset">Reset filters</button>
+   </div>
+   <div class="kpis" id="kpis"></div>
+   
+   <div class="grid2">
+     <!-- Map & Chart -->
+     <div class="card">
+       <h2>Geospatial Distribution</h2>
+       <p class="sub">Click a marker to filter the dashboard. Markers are colored by poverty incidence.</p>
+       <div id="map"></div>
+       <div class="chart-container"><canvas id="popChart"></canvas></div>
+     </div>
+     <!-- Detail Panel -->
+     <div class="card" id="detail"></div>
+   </div>
+  </section>
+
+  <!-- GROWTH TAB -->
+  <section id="gr" hidden>
+   <div class="card">
+    <h2>Population Change, 2020 to 2024</h2>
+    <div class="filters">
+     <label>Rank by<select id="gs"><option value="g">Annual growth rate (%)</option><option value="d">People added or lost</option><option value="name">Name (A to Z)</option></select></label>
+    </div>
+    <div class="chart-container" style="height:350px;"><canvas id="growthChart"></canvas></div>
+    <p class="sub" style="margin-top:10px;">Green = growth, red = decline. Annual rate is computed from PSA counts over 4.17 years (1 May 2020 to 1 July 2024). The provincial rate matches PSA's published 2.23%.</p>
+   </div>
+  </section>
+
+  <!-- OTHER SURVEYS TAB -->
+  <section id="sv" hidden>
+   <div class="card">
+    <h2>Other PSA Surveys for Tawi-Tawi</h2>
+    <div class="filters"><label>Choose an indicator<select id="sx"></select></label></div>
+    <p class="sub" id="sd" style="margin-bottom:10px;"></p>
+    <div class="chart-container" style="height:300px;"><canvas id="surveyChart"></canvas></div>
+    <div class="insight" id="sn" style="margin-top:15px;"></div>
+    <p style="margin-top:10px;"><a id="sl" class="btn" target="_blank" rel="noopener">Verify at PSA ↗</a></p>
+   </div>
+  </section>
+
+  <!-- COMPARE TAB -->
+  <section id="cp" hidden>
+   <div class="card">
+    <h2>Compare Two Municipalities</h2>
+    <div class="filters"><label>First<select id="c1"></select></label><label>Second<select id="c2"></select></label></div>
+    <div class="grid2">
+      <div class="cmp" id="cmp"></div>
+      <div class="chart-container"><canvas id="radarChart"></canvas></div>
+    </div>
+   </div>
+  </section>
+
+  <!-- BARANGAYS TAB -->
+  <section id="bg" hidden>
+   <div class="card">
+    <h2>Top 20 Most Populous Barangays (2020 Census)</h2>
+    <div class="filters"><label>Municipality<select id="bm"></select></label></div>
+    <div class="scroll"><table><thead><tr><th>#</th><th>Barangay</th><th>Municipality</th><th style="text-align:right">Population</th><th style="width:30%">Relative Size</th></tr></thead><tbody id="bt"></tbody></table></div>
+    <p class="sub">Only the 20 largest barangays of the province are listed, so smaller municipalities may show few or no rows.</p>
+   </div>
+  </section>
+
+  <!-- SOURCES TAB -->
+  <section id="src" hidden>
+   <div class="card">
+    <h2>Data Sources (Click to verify)</h2>
+    <ul>
+     <li><a href="https://psa.gov.ph/classification/psgc/citimuni/1907000000" target="_blank" rel="noopener">PSA PSGC: Municipalities of Tawi-Tawi</a>: 2024 POPCEN population, current income class and PSGC codes.</li>
+     <li><a href="https://psa.gov.ph/content/2024-census-population-popcen-population-counts-declared-official-president" target="_blank" rel="noopener">2024 POPCEN population counts declared official</a> (PSA).</li>
+     <li><a href="https://psa.gov.ph/content/highlights-bangsamoro-autonomous-region-muslim-mindanao-barmm-population-2024-census" target="_blank" rel="noopener">Highlights of the BARMM population, 2024 POPCEN</a> (PSA).</li>
+     <li><a href="https://rssoarmm.psa.gov.ph/release/54895/special-release/tawi-tawi-total-population-reached-390-715" target="_blank" rel="noopener">Tawi-Tawi total population, 2015 POPCEN</a> (PSA regional office).</li>
+     <li><a href="https://psa.gov.ph/system/files/phdsd/2023%201st%20Sem%20Official%20Poverty%20Statistics%20Report.pdf" target="_blank" rel="noopener">2023 First Semester Official Poverty Statistics report</a> (PSA): provincial poverty incidence among families.</li>
+     <li><a href="https://psa.gov.ph/content/881-cities-and-municipalities-recorded-poverty-incidence-20-percent-or-lower-2023" target="_blank" rel="noopener">2023 city and municipal poverty estimates</a> (PSA small area estimates).</li>
+     <li><a href="https://psa.gov.ph/statistics/labor-force-survey/press-release/node/1684083111" target="_blank" rel="noopener">2025 Annual Provincial Labor Market Statistics</a> (PSA, preliminary).</li>
+     <li><a href="https://rssobarmm.psa.gov.ph/content/number-unemployed-barmm-increased-93-thousand-bangsamoros-aged-15-years-and-over-2025" target="_blank" rel="noopener">2025 Labor Force Survey highlights for BARMM</a> (PSA-BARMM).</li>
+     <li><a href="https://openstat.psa.gov.ph/" target="_blank" rel="noopener">PSA OpenSTAT</a>: official database for the 2020 CPH municipal and barangay tables.</li>
+    </ul>
+    <h2 style="margin-top:14px">Notes on the Data</h2>
+    <ul>
+     <li>2024 population and income class: PSA PSGC page for Tawi-Tawi (total 482,645). 2020 population: PSA 2020 Census of Population and Housing (total 440,276).</li>
+     <li>Growth rates and "people added" are computed by this dashboard from those PSA counts.</li>
+     <li>2015 population is shown only for the 8 municipalities where the PSA release figure was retrieved; other cells say "Not in dataset". Area (2013), 2020 density, barangay count and 2015-2020 growth are likewise shown only where available.</li>
+     <li>The barangay ranking uses 2020 CPH counts compiled from PSA data by Philatlas. Please confirm exact figures on OpenSTAT.</li>
+     <li>Provincial poverty uses first-semester FIES figures (2018, 2021, 2023) with 90% confidence intervals from the PSA report; national figures are from the same table. Compare families with families only.</li>
+     <li>Municipal poverty (2023 small area estimates, share of population) was read from municipality pages that cite the PSA release, so please confirm each value on PSA or OpenSTAT. Mapun and Turtle Islands are shown as "Not in dataset" because a 2023 value was not retrieved.</li>
+     <li>Labor Force Survey figures are 2025 preliminary provincial estimates and may be revised.</li>
+     <li>Income classes are as currently listed by PSA and may differ from older tables.</li>
+    </ul>
+   </div>
+  </section>
+  <footer>Built for the PSA data dashboard contest. All figures belong to the Philippine Statistics Authority.</footer>
+</div>
+</div>
+
+<script>
+// ==========================================
+// 1. DATA STORE
+// ==========================================
+const T = 4.1667; // Years between 2020 and 2024
+const D = [
+  {n:"Bongao", pv:28.81, p24:131887, p20:116118, c:"1st", g:"1907002000", p15:100527},
+  {n:"Panglima Sugala", pv:49.33, p24:52657, p20:48055, c:"1st", g:"1907001000", p15:44187},
+  {n:"Sitangkai", pv:54.33, p24:42172, p20:37319, c:"1st", g:"1907005000", p15:33334, gr:2.41, a:735.46, d:51, b:9},
+  {n:"Languyan", pv:54.01, p24:41587, p20:37096, c:"1st", g:"1907009000", p15:33494, gr:2.17, a:581.20, d:64, b:20},
+  {n:"Sibutu", pv:42.62, p24:38070, p20:34243, c:"3rd", g:"1907011000", p15:30387, gr:2.55, a:56.54, d:606, b:16},
+  {n:"Sapa-Sapa", pv:53.49, p24:37129, p20:33580, c:"2nd", g:"1907010000"},
+  {n:"Simunul", pv:34.15, p24:35616, p20:34245, c:"2nd", g:"1907004000", p15:31223, gr:1.96, a:167.25, d:205, b:15},
+  {n:"Tandubas", pv:61.33, p24:34702, p20:34316, c:"1st", g:"1907007000", p15:29390, gr:3.32, a:552.05, d:62, b:20},
+  {n:"South Ubian", pv:27.61, p24:31942, p20:29583, c:"2nd", g:"1907006000"},
+  {n:"Mapun", p24:29218, p20:30038, c:"3rd", g:"1907003000", p15:26597, gr:2.59, a:181.29, d:166, b:15},
+  {n:"Turtle Islands", p24:7665, p20:5683, c:"5th", g:"1907008000"}
+];
+D.forEach(m => { m.dd = m.p24 - m.p20; m.gg = (Math.pow(m.p24/m.p20, 1/T) - 1) * 100; });
+
+const BR = [["Bongao Poblacion",15462,"Bongao"],["Simandagit",8741,"Bongao"],["Tubig-Boh",8664,"Bongao"],["Panglima Alari",8417,"Sitangkai"],["Lamion",8296,"Bongao"],["Pag-asa",7891,"Bongao"],["Sipangkot",6896,"Sitangkai"],["Tubig-Mampallam",6211,"Bongao"],["Tubig Tanah",6092,"Bongao"],["Tonggusong Banaran",6026,"Sapa-Sapa"],["Nalil",5487,"Bongao"],["Balimbing Proper",5228,"Panglima Sugala"],["Timundon",4802,"Simunul"],["Darussalam",4634,"Languyan"],["Imam Sapie",4580,"Sitangkai"],["Sanga-sanga",4548,"Bongao"],["Taganak Poblacion",4207,"Turtle Islands"],["Languyan Proper",4013,"Languyan"],["Buan",4007,"Panglima Sugala"],["Batu-batu",3858,"Panglima Sugala"]];
+const TOT = { p24: 482645, p20: 440276 };
+
+const MUNICIPALITY_COORDS = {
+  'Bongao': [5.03, 119.77], 'Panglima Sugala': [5.10, 120.10], 'Mapun': [6.98, 118.51],
+  'Turtle Islands': [6.25, 118.30], 'Tandubas': [5.15, 120.20], 'Languyan': [5.28, 120.15],
+  'Sapa-Sapa': [5.05, 120.25], 'Simunul': [4.85, 119.75], 'Sitangkai': [4.75, 119.40],
+  'South Ubian': [5.00, 120.00], 'Sibutu': [4.85, 119.45]
+};
+
+// ==========================================
+// 2. STATE & HELPERS
+// ==========================================
+let state = { y: "p24", q: "", sort: "pop", cls: {}, sel: "Bongao" };
+let charts = {}; // Store Chart.js instances
+let map, geoJsonLayer;
+const $ = id => document.getElementById(id);
+const f = n => n ? n.toLocaleString("en-US") : 'N/A';
+const sg = (v, d) => (v > 0 ? "+" : "") + (v || 0).toFixed(d == null ? 2 : d);
+const get = n => D.filter(m => m.n === n)[0];
+const rank = (y, n) => D.slice().sort((a, b) => b[y] - a[y]).map(m => m.n).indexOf(n) + 1;
+const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark' || (!document.documentElement.hasAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+function getThemeColors() {
+  const dark = isDark();
+  return {
+    text: dark ? '#e8edf6' : '#14213d',
+    grid: dark ? '#2a3750' : '#dde3ec',
+    pri: dark ? '#5aa6ee' : '#0b5cab',
+    acc: dark ? '#ffb04d' : '#e07a00',
+    ok: dark ? '#4cc58a' : '#1b7f4b',
+    bad: dark ? '#ff7b6b' : '#c0392b'
+  };
+}
+
+function getPovertyColor(p) {
+  if (p > 50) return '#c0392b';
+  if (p > 40) return '#e07a00';
+  if (p > 30) return '#f1c40f';
+  return '#1b7f4b';
+}
+
+// ==========================================
+// 3. INITIALIZATION
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+  // Simulate API Fetch
+  setTimeout(() => {
+    $("loadingIndicator").hidden = true;
+    $("dashboardContent").hidden = false;
+    initMap();
+    render();
+    grow();
+    cmp();
+    bar();
+    sv();
+  }, 1500);
+
+  // Tab Listeners
+  document.querySelectorAll(".tab").forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === b));
+      ["ov", "gr", "sv", "cp", "bg", "src"].forEach(s => $(s).hidden = s !== b.dataset.t);
+      if(b.dataset.t === 'gr') grow();
+      if(b.dataset.t === 'sv') sv();
+      if(b.dataset.t === 'cp') cmp();
+      if(b.dataset.t === 'bg') bar();
+    };
+  });
+
+  // Year Toggle
+  document.querySelectorAll("#yr button").forEach(b => {
+    b.onclick = () => {
+      state.y = b.dataset.y;
+      document.querySelectorAll("#yr button").forEach(x => x.setAttribute("aria-pressed", x === b));
+      render();
+    };
+  });
+
+  // Income Class Chips
+  ["1st", "2nd", "3rd", "4th", "5th"].forEach(c => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = c; b.setAttribute("aria-pressed", "false");
+    b.onclick = () => { state.cls[c] = !state.cls[c]; b.setAttribute("aria-pressed", !!state.cls[c]); render(); };
+    $("chips").appendChild(b);
+  });
+
+  // Search & Sort
+  $("q").oninput = function() { state.q = this.value.toLowerCase(); render(); };
+  $("sort").onchange = function() { state.sort = this.value; render(); };
+  $("reset").onclick = () => {
+    state.q = ""; state.sort = "pop"; state.cls = {};
+    $("q").value = ""; $("sort").value = "pop";
+    document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", "false"));
+    render();
+  };
+
+  // Growth Sort
+  $("gs").onchange = grow;
+
+  // Compare Dropdowns
+  D.slice().sort((a,b) => a.n.localeCompare(b.n)).forEach(m => {
+    ["c1", "c2"].forEach(id => {
+      const o = document.createElement("option"); o.value = o.textContent = m.n; $(id).appendChild(o);
+    });
+  });
+  $("c1").value = "Bongao"; $("c2").value = "Panglima Sugala";
+  $("c1").onchange = cmp; $("c2").onchange = cmp;
+
+  // Barangay Filter
+  const seen = {};
+  const allOpt = document.createElement("option"); allOpt.value = "All"; allOpt.textContent = "All municipalities"; $("bm").appendChild(allOpt);
+  BR.forEach(b => { if(!seen[b[2]]) { seen[b[2]] = 1; const o = document.createElement("option"); o.value = o.textContent = b[2]; $("bm").appendChild(o); } });
+  $("bm").onchange = bar;
+});
+
+// ==========================================
+// 4. MAP LOGIC
+// ==========================================
+function initMap() {
+  map = L.map('map').setView([5.2, 119.8], 9);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri', maxZoom: 18
+  }).addTo(map);
+}
+
+function updateMap() {
+  if (!map) return;
+  if (geoJsonLayer) map.removeLayer(geoJsonLayer);
+  const features = [];
+  D.forEach(m => {
+    const coords = MUNICIPALITY_COORDS[m.n];
+    if (!coords) return;
+    features.push({
+      type: 'Feature',
+      properties: { name: m.n, pop: m[state.y], poverty: m.pv, color: getPovertyColor(m.pv) },
+      geometry: { type: 'Point', coordinates: [coords[1], coords[0]] }
+    });
+  });
+
+  geoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features }, {
+    pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
+      radius: 14, fillColor: feature.properties.color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
+    }),
+    onEachFeature: (feature, layer) => {
+      const p = feature.properties;
+      layer.bindPopup(`<strong>${p.name}</strong><br>Population: ${f(p.pop)}<br>Poverty: ${p.poverty ? p.poverty.toFixed(1) + '%' : 'N/A'}<br><em>Click to filter</em>`);
+      layer.on('click', () => {
+        state.sel = p.name;
+        render();
+      });
+    }
+  }).addTo(map);
+  map.fitBounds(geoJsonLayer.getBounds().pad(0.2));
+}
+
+// ==========================================
+// 5. RENDER FUNCTIONS
+// ==========================================
+function filtered() {
+  const any = Object.keys(state.cls).some(k => state.cls[k]);
+  let r = D.filter(m => m.n.toLowerCase().indexOf(state.q) > -1 && (!any || state.cls[m.c]));
+  r.sort((a, b) => state.sort === "name" ? a.n.localeCompare(b.n) : state.sort === "popA" ? a[state.y] - b[state.y] : b[state.y] - a[state.y]);
+  return r;
+}
+
+function k(l, v, n) { return `<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="n">${n}</div></div>`; }
+
+function render() {
+  const y = state.y, yl = y === "p24" ? "2024 POPCEN" : "2020 Census";
+  const r = filtered(), sum = r.reduce((s, m) => s + m[y], 0);
+
+  $("kpis").innerHTML = r.length ?
+    k("Population shown", f(sum), `${(sum / TOT[y] * 100).toFixed(1)}% of province total of ${f(TOT[y])}`) +
+    k("Municipalities shown", r.length + " of 11", "after current filters") +
+    k("Largest", r.slice().sort((a,b) => b[y] - a[y])[0].n, f(r.slice().sort((a,b) => b[y] - a[y])[0][y]) + " people") +
+    k("Smallest", r.slice().sort((a,b) => a[y] - b[y])[0].n, f(r.slice().sort((a,b) => a[y] - b[y])[0][y]) + " people")
+    : k("No results", "0", "Try Reset filters");
+
+  updateMap();
+  renderPopChart(r);
+  detail();
+}
+
+function renderPopChart(data) {
+  const ctx = $("popChart").getContext('2d');
+  const colors = getThemeColors();
+  if (charts.pop) charts.pop.destroy();
+  
+  charts.pop = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(m => m.n),
+      datasets: [{
+        label: 'Population',
+        data: data.map(m => m[state.y]),
+        backgroundColor: data.map(m => m.n === state.sel ? colors.acc : colors.pri),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      onClick: (e, elements) => {
+        if(elements.length > 0) { state.sel = data[elements[0].index].n; render(); }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: colors.grid }, ticks: { color: colors.text } },
+        x: { grid: { display: false }, ticks: { color: colors.text } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function detail() {
+  const m = get(state.sel);
+  if (!m) { $("detail").innerHTML = '<div class="empty">Click a bar to see details.</div>'; return; }
+  const y = state.y;
+  const sh = (m[y] / TOT[y] * 100).toFixed(1);
+  const avg = TOT[y] / 11;
+  const rel = m[y] >= avg ? ((m[y] / avg - 1) * 100).toFixed(0) + "% above" : ((1 - m[y] / avg) * 100).toFixed(0) + "% below";
+  const tr = m.gg >= 0 ? "grew" : "shrank";
+
+  $("detail").innerHTML = `<h2>Profile: ${m.n}</h2>
+    <dl>
+      <dt>Population (2024)</dt><dd>${f(m.p24)}</dd>
+      <dt>Population (2020)</dt><dd>${f(m.p20)}</dd>
+      <dt>Change 2020-2024</dt><dd class="${m.dd >= 0 ? 'pos' : 'neg2'}">${m.dd >= 0 ? "+" : ""}${f(m.dd)} (${sg(m.gg)}%/yr)</dd>
+      <dt>Share of province</dt><dd>${sh}%</dd>
+      <dt>Rank of 11</dt><dd>#${rank(y, m.n)}</dd>
+      <dt>Income class</dt><dd>${m.c}</dd>
+      <dt>Poverty incidence 2023</dt><dd>${m.pv ? m.pv.toFixed(1) + "%" : '<span class="na">Not in dataset</span>'}</dd>
+      <dt>Barangays</dt><dd>${m.b ? f(m.b) : '<span class="na">Not in dataset</span>'}</dd>
+    </dl>
+    <div class="insight">${m.n} holds <b>${sh}%</b> of Tawi-Tawi residents and is <b>${rel}</b> the municipal average of ${f(Math.round(avg))}. Since 2020 it ${tr} by about <b>${Math.abs(m.gg).toFixed(2)}%</b> a year.</div>`;
+}
+
+// ==========================================
+// 6. GROWTH TAB
+// ==========================================
+function grow() {
+  const key = $("gs").value;
+  let r = D.slice().sort((a, b) => key === "name" ? a.n.localeCompare(b.n) : key === "d" ? b.dd - a.dd : b.gg - a.gg);
+  const colors = getThemeColors();
+  
+  const ctx = $("growthChart").getContext('2d');
+  if (charts.growth) charts.growth.destroy();
+
+  charts.growth = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: r.map(m => m.n),
+      datasets: [{
+        label: key === 'd' ? 'People Added' : 'Annual Growth Rate (%)',
+        data: r.map(m => key === 'd' ? m.dd : m.gg),
+        backgroundColor: r.map(m => (key === 'd' ? m.dd : m.gg) >= 0 ? colors.ok : colors.bad),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      onClick: (e, elements) => {
+        if(elements.length > 0) { state.sel = r[elements[0].index].n; render(); grow(); }
+      },
+      scales: {
+        x: { grid: { color: colors.grid }, ticks: { color: colors.text } },
+        y: { grid: { display: false }, ticks: { color: colors.text } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+// ==========================================
+// 7. OTHER SURVEYS TAB
+// ==========================================
+const SV = [
+  {t:"Poverty incidence among families, first semester (FIES)", d:"Share of families whose income cannot meet basic food and non-food needs. PSA placed Tawi-Tawi in the poorest cluster of provinces in 2023.", 
+   rows:[{l:"2018 Tawi-Tawi",v:17.7,h:1,n:"90% CI 15.1-20.3"},{l:"2018 Philippines",v:16.2},{l:"2021 Tawi-Tawi",v:39.5,h:1,n:"90% CI 34.0-45.1"},{l:"2021 Philippines",v:18.0},{l:"2023 Tawi-Tawi",v:50.5,h:1,n:"90% CI 45.0-56.0"},{l:"2023 Philippines",v:16.4}],
+   ins:"In 2023, about 50.5 of every 100 Tawi-Tawi families were poor, versus 16.4 nationally: a gap of 34.1 percentage points.",
+   url:"https://psa.gov.ph/system/files/phdsd/2023%201st%20Sem%20Official%20Poverty%20Statistics%20Report.pdf"},
+  {t:"Labor force participation rate, 2025 (Labor Force Survey)", d:"Share of people aged 15 and over who are working or looking for work.",
+   rows:[{l:"Tawi-Tawi",v:50.9,h:1,n:"lowest among provinces"},{l:"BARMM",v:73.5},{l:"Philippines",v:64.1}],
+   ins:"Tawi-Tawi's participation rate is 13.2 points below the national rate and the lowest of any province in 2025.",
+   url:"https://psa.gov.ph/statistics/labor-force-survey/press-release/node/1684083111"},
+  {t:"Unemployment rate, 2025 (Labor Force Survey)", d:"Share of the labor force that is unemployed.",
+   rows:[{l:"Tawi-Tawi",v:6.7,h:1},{l:"BARMM",v:3.9},{l:"Philippines",v:4.2}],
+   ins:"Tawi-Tawi's unemployment rate is 2.5 points above the national rate and 2.8 points above the BARMM average.",
+   url:"https://rssobarmm.psa.gov.ph/content/number-unemployed-barmm-increased-93-thousand-bangsamoros-aged-15-years-and-over-2025"},
+  {t:"Poverty incidence by municipality, 2023 (small area estimates)", d:"Share of the population that is poor.",
+   sae:1, url:"https://psa.gov.ph/content/881-cities-and-municipalities-recorded-poverty-incidence-20-percent-or-lower-2023"}
+];
+
+function sv() {
+  const sx = $("sx");
+  if (sx.options.length === 0) {
+    SV.forEach((x, i) => { const o = document.createElement("option"); o.value = i; o.textContent = x.t; sx.appendChild(o); });
+  }
+  const s = SV[sx.selectedIndex] || SV[0];
+  let rows = s.rows, ins = s.ins;
+
+  if (s.sae) {
+    rows = D.filter(m => m.pv != null).sort((a, b) => b.pv - a.pv).map(m => ({ l: m.n, v: m.pv, c: m.n }));
+    const m = get(state.sel);
+    ins = m && m.pv != null ? `${m.n} is at ${m.pv.toFixed(1)}%, ranking #${rows.map(r => r.l).indexOf(m.n) + 1} of ${rows.length} municipalities with data.` : "Select a municipality with data to see its rank.";
+  }
+
+  const colors = getThemeColors();
+  const ctx = $("surveyChart").getContext('2d');
+  if (charts.survey) charts.survey.destroy();
+
+  charts.survey = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => r.l),
+      datasets: [{
+        label: 'Percentage (%)',
+        data: rows.map(r => r.v),
+        backgroundColor: rows.map(r => r.c === state.sel ? colors.acc : (r.h ? colors.acc : colors.pri)),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      onClick: (e, elements) => {
+        if(elements.length > 0 && rows[elements[0].index].c) {
+          state.sel = rows[elements[0].index].c; render(); grow(); sv();
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, max: 100, grid: { color: colors.grid }, ticks: { color: colors.text } },
+        y: { grid: { display: false }, ticks: { color: colors.text } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  $("sd").textContent = s.d; $("sn").textContent = ins; $("sl").href = s.url;
+}
+
+// ==========================================
+// 8. COMPARE TAB
+// ==========================================
+function cmp() {
+  const a = get($("c1").value), b = get($("c2").value);
+  if (!a || !b) return;
+
+  const rows = [
+    ["Population (2024)", a.p24, b.p24, f],
+    ["Population (2020)", a.p20, b.p20, f],
+    ["Annual growth 2020-24", a.gg, b.gg, v => sg(v) + "%"],
+    ["Poverty incidence 2023", a.pv, b.pv, v => v ? v.toFixed(1) + "%" : 'N/A'],
+    ["Income class", a.c, b.c, String],
+    ["Density 2020 (/km²)", a.d, b.d, f]
+  ];
+
+  let h = '<div class="h">Measure</div><div class="h">' + a.n + '</div><div class="h">' + b.n + '</div>';
+  rows.forEach(r => {
+    const x = r[1], y = r[2];
+    const fx = x == null ? '<span class="na">N/A</span>' : r[3](x);
+    const fy = y == null ? '<span class="na">N/A</span>' : r[3](y);
+    h += `<div class="m">${r[0]}</div><div class="c">${fx}</div><div class="c">${fy}</div>`;
+  });
+  $("cmp").innerHTML = h;
+
+  // Radar Chart
+  const colors = getThemeColors();
+  const ctx = $("radarChart").getContext('2d');
+  if (charts.radar) charts.radar.destroy();
+
+  const maxPop = Math.max(...D.map(m => m.p24));
+  const maxPov = Math.max(...D.map(m => m.pv || 0));
+
+  charts.radar = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['Population (normalized)', 'Poverty (inverse)', 'Growth Rate', 'Density'],
+      datasets: [
+        { label: a.n, data: [a.p24/maxPop*100, (1 - (a.pv||0)/maxPov)*100, a.gg*10, (a.d||0)/10], borderColor: colors.pri, backgroundColor: colors.pri + '33' },
+        { label: b.n, data: [b.p24/maxPop*100, (1 - (b.pv||0)/maxPov)*100, b.gg*10, (b.d||0)/10], borderColor: colors.acc, backgroundColor: colors.acc + '33' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        r: {
+          angleLines: { color: colors.grid },
+          grid: { color: colors.grid },
+          pointLabels: { color: colors.text },
+          ticks: { display: false, max: 100 }
+        }
+      },
+      plugins: { legend: { labels: { color: colors.text } } }
+    }
+  });
+}
+
+// ==========================================
+// 9. BARANGAYS TAB
+// ==========================================
+function bar() {
+  const v = $("bm").value, mx = BR[0][1];
+  let h = "";
+  BR.forEach((b, i) => {
+    if (v === "All" || b[2] === v) {
+      h += `<tr><td>${i + 1}</td><td>${b[0]}</td><td>${b[2]}</td><td class="num">${f(b[1])}</td><td><div class="track"><div class="fill" style="width:${b[1] / mx * 100}%"></div></div></td></tr>`;
+    }
+  });
+  $("bt").innerHTML = h;
+}
+</script>
+</body>
+</html>
